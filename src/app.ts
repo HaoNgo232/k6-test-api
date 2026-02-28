@@ -2,6 +2,7 @@ import express, { Application } from 'express';
 import cors from 'cors';
 import authRouter from './modules/auth';
 import itemsRouter from './modules/items';
+import { authMiddleware } from './middleware/auth.middleware';
 import { errorMiddleware } from './middleware/error.middleware';
 
 const app: Application = express();
@@ -31,7 +32,7 @@ app.get('/health', (req, res) => {
 
 // Routes
 app.use('/api/auth', authRouter);
-app.use('/api/items', itemsRouter);
+app.use('/api/items', authMiddleware, itemsRouter);
 
 // Error handling
 app.use(errorMiddleware);

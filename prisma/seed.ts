@@ -1,13 +1,16 @@
+import path from 'path';
 import { PrismaClient } from '@prisma/client';
 import { PrismaLibSql } from '@prisma/adapter-libsql';
 
+const DB_PATH = `file:${path.resolve(process.cwd(), 'dev.db')}`;
+
 const adapter = new PrismaLibSql({
-  url: 'file:./dev.db'
+  url: DB_PATH
 });
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  console.log('🌱 Seeding database...');
+  console.log(`🌱 Seeding database at ${DB_PATH}...`);
 
   // Create test user
   const user = await prisma.user.upsert({

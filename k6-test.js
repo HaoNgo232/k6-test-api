@@ -6,6 +6,9 @@ import { textSummary } from 'https://jslib.k6.io/k6-summary/0.0.2/index.js';
 // ============================
 // CẤU HÌNH
 // ============================
+// Local:  k6 run k6-test.js
+// K8s:    k6 run -e BASE_URL=http://k6-test-api-svc/api k6-test.js
+// Single: k6 run -e BASE_URL=http://localhost:3000/api --scenario smoke_test k6-test.js
 const BASE_URL = __ENV.BASE_URL || 'http://localhost:3000/api';
 
 // ============================
@@ -21,59 +24,79 @@ const crudSuccessCount = new Counter('crud_success_total');
 // ============================
 // CÁC KỊCH BẢN TEST
 // ============================
-export const options = {
-  scenarios: {
-    // ---- Kịch bản 1: Smoke Test (kiểm tra cơ bản) ----
-    smoke_test: {
-      executor: 'constant-vus',
-      vus: 5,
-      duration: '1m',
-      startTime: '0s',
-      tags: { test_type: 'smoke' },
-    },
 
-    // ---- Kịch bản 2: Load Test (tải bình thường) ----
-    load_test: {
-      executor: 'ramping-vus',
-      startVUs: 0,
-      stages: [
-        { duration: '2m', target: 50 },   // Tăng dần lên 50 users
-        { duration: '5m', target: 50 },   // Giữ 50 users trong 5 phút
-        { duration: '2m', target: 0 },    // Giảm dần về 0
-      ],
-      startTime: '1m30s',
-      tags: { test_type: 'load' },
-    },
-
-    // ---- Kịch bản 3: Stress Test (tải cao - test scaling) ----
-    stress_test: {
-      executor: 'ramping-vus',
-      startVUs: 0,
-      stages: [
-        { duration: '2m', target: 50 },
-        { duration: '3m', target: 100 },
-        { duration: '3m', target: 200 },  // Đẩy lên 200 users
-        { duration: '3m', target: 300 },  // Đẩy lên 300 users
-        { duration: '2m', target: 0 },
-      ],
-      startTime: '11m',
-      tags: { test_type: 'stress' },
-    },
-
-    // ---- Kịch bản 4: Spike Test (đột biến tải) ----
-    spike_test: {
-      executor: 'ramping-vus',
-      startVUs: 0,
-      stages: [
-        { duration: '30s', target: 10 },
-        { duration: '10s', target: 500 }, // Spike đột ngột lên 500
-        { duration: '1m', target: 500 },
-        { duration: '30s', target: 10 },
-      ],
-      startTime: '25m',
-      tags: { test_type: 'spike' },
-    },
+// Tất cả scenarios được định nghĩa ở đây
+const allScenarios = {
+  // ---- Kịch bản 1: Smoke Test (kiểm tra cơ bản) ----
+  smoke_test: {
+    executor: 'constant-vus',
+    vus: 5,
+    duration: '1m',
+    startTime: '0s',
+    tags: { test_type: 'smoke' },
   },
+
+  // ---- Kịch bản 2: Load Test (tải bình thường) ----
+  load_test: {
+    executor: 'ramping-vus',
+    startVUs: 0,
+    stages: [
+      { duration: '2m', target: 50 },   // Tăng dần lên 50 users
+      { duration: '5m', target: 50 },   // Giữ 50 users trong 5 phút
+      { duration: '2m', target: 0 },    // Giảm dần về 0
+    ],
+    startTime: '1m30s',
+    tags: { test_type: 'load' },
+  },
+
+  // ---- Kịch bản 3: Stress Test (tải cao - test scaling) ----
+  stress_test: {
+    executor: 'ramping-vus',
+    startVUs: 0,
+    stages: [
+      { duration: '2m', target: 50 },
+      { duration: '3m', target: 100 },
+      { duration: '3m', target: 200 },  // Đẩy lên 200 users
+      { duration: '3m', target: 300 },  // Đẩy lên 300 users
+      { duration: '2m', target: 0 },
+    ],
+    startTime: '11m',
+    tags: { test_type: 'stress' },
+  },
+
+  // ---- Kịch bản 4: Spike Test (đột biến tải) ----
+  spike_test: {
+    executor: 'ramping-vus',
+    startVUs: 0,
+    stages: [
+      { duration: '30s', target: 10 },
+      { duration: '10s', target: 500 }, // Spike đột ngột lên 500
+      { duration: '1m', target: 500 },
+      { duration: '30s', target: 10 },
+    ],
+    startTime: '25m',
+    tags: { test_type: 'spike' },
+  },
+};
+
+// ============================
+// CHỌN SCENARIO
+// ============================
+// Chạy 1 scenario:  k6 run -e SCENARIO=smoke_test k6-test.js
+// Chạy tất cả:      k6 run k6-test.js
+const selectedScenario = __ENV.SCENARIO;
+const scenariosToRun = selectedScenario
+  ? { [selectedScenario]: { ...allScenarios[selectedScenario], startTime: '0s' } }
+  : allScenarios;
+
+if (selectedScenario && !allScenarios[selectedScenario]) {
+  throw new Error(
+    `❌ Scenario "${selectedScenario}" không tồn tại. Các scenario có sẵn: ${Object.keys(allScenarios).join(', ')}`
+  );
+}
+
+export const options = {
+  scenarios: scenariosToRun,
 
   // ============================
   // NGƯỠNG CHẤP NHẬN (Thresholds)

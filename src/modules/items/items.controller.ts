@@ -4,6 +4,15 @@ import { AuthRequest } from '../../middleware/auth.middleware';
 
 const router = Router();
 
+/**
+ * Helper: parse ID param safely, returns number or null if invalid
+ */
+function parseId(req: AuthRequest): number | null {
+  const idParam = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+  const id = parseInt(idParam, 10);
+  return Number.isNaN(id) || id <= 0 ? null : id;
+}
+
 // CREATE
 router.post('/', async (req: AuthRequest, res: Response): Promise<void> => {
   try {
@@ -24,8 +33,8 @@ router.post('/', async (req: AuthRequest, res: Response): Promise<void> => {
 // READ ALL
 router.get('/', async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const page = parseInt((req.query.page as string) || '1');
-    const limit = parseInt((req.query.limit as string) || '20');
+    const page = Math.max(1, parseInt((req.query.page as string) || '1', 10) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt((req.query.limit as string) || '20', 10) || 20));
 
     const result = await itemsService.findAll(page, limit);
     res.status(200).json(result.items);
@@ -37,8 +46,12 @@ router.get('/', async (req: AuthRequest, res: Response): Promise<void> => {
 // READ ONE
 router.get('/:id', async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const idParam = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-    const id = parseInt(idParam);
+    const id = parseId(req);
+    if (id === null) {
+      res.status(400).json({ error: 'Invalid item ID' });
+      return;
+    }
+
     const item = await itemsService.findById(id);
 
     if (!item) {
@@ -55,8 +68,12 @@ router.get('/:id', async (req: AuthRequest, res: Response): Promise<void> => {
 // UPDATE
 router.put('/:id', async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const idParam = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-    const id = parseInt(idParam);
+    const id = parseId(req);
+    if (id === null) {
+      res.status(400).json({ error: 'Invalid item ID' });
+      return;
+    }
+
     const { title, description, status } = req.body;
 
     const item = await itemsService.update(id, { title, description, status });
@@ -69,8 +86,12 @@ router.put('/:id', async (req: AuthRequest, res: Response): Promise<void> => {
 // DELETE
 router.delete('/:id', async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const idParam = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-    const id = parseInt(idParam);
+    const id = parseId(req);
+    if (id === null) {
+      res.status(400).json({ error: 'Invalid item ID' });
+      return;
+    }
+
     await itemsService.delete(id);
     res.status(204).send();
   } catch (error) {
