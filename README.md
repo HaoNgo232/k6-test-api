@@ -1,68 +1,45 @@
-# K6 Test API
+# Express Microservice Template
 
-Express API với TypeScript + Prisma + PostgreSQL để kiểm thử hiệu năng bằng K6.
+Template để tạo nhanh Express microservice với TypeScript + Prisma + PostgreSQL.
+
+## 🚀 Quick Start
+
+### 1. Clone template
+```bash
+cp -r express-api my-new-service
+cd my-new-service
+```
+
+### 2. Customize service
+```bash
+# Update package.json name
+# Update .env với DATABASE_URL và SERVICE_NAME của bạn
+cp .env.example .env
+```
+
+### 3. Setup
+```bash
+npm install
+npm run prisma:migrate
+npm run prisma:seed
+npm run dev
+```
 
 ## 📋 Requirements
 
 - Node.js >= 18
-- K6 (để chạy performance tests)
+- PostgreSQL database
 
-**Note:** SQLite được sử dụng, không cần cài đặt database riêng!
+## 🔧 Configuration
 
-## 🚀 Setup
-
-### 1. Install dependencies
-
-```bash
-npm install
+File `.env`:
+```env
+SERVICE_NAME=my-service
+PORT=3000
+NODE_ENV=development
+DATABASE_URL="postgresql://user:password@localhost:5432/mydb?schema=public"
+JWT_SECRET="your-secret-key"
 ```
-
-### 2. Configure environment (Optional)
-
-Copy `.env.example` to `.env` nếu cần customize:
-
-```bash
-cp .env.example .env
-```
-
-**Note:** SQLite không cần DATABASE_URL configuration. Database file sẽ được tạo tự động tại `./dev.db`
-
-### 3. Setup database
-
-Generate Prisma client:
-
-```bash
-npm run prisma:generate
-```
-
-Run migrations:
-
-```bash
-npm run prisma:migrate
-```
-
-Seed test user:
-
-```bash
-npm run prisma:seed
-```
-
-### 4. Start server
-
-Development mode:
-
-```bash
-npm run dev
-```
-
-Production mode:
-
-```bash
-npm run build
-npm start
-```
-
-Server sẽ chạy tại: `http://localhost:3000`
 
 ## 📡 API Endpoints
 
@@ -75,145 +52,60 @@ GET /health
 ```
 POST /api/auth/login
 Body: { "username": "testuser", "password": "testpassword" }
-Response: { "token": "jwt-token" }
 ```
 
 ### Items CRUD
-
-**Create Item**
 ```
-POST /api/items
-Headers: Authorization: Bearer <token>
-Body: { "title": "...", "description": "...", "status": "active" }
-```
-
-**Get All Items**
-```
-GET /api/items?page=1&limit=20
-Headers: Authorization: Bearer <token>
+POST   /api/items          # Create
+GET    /api/items          # List (pagination)
+GET    /api/items/:id      # Get by ID
+PUT    /api/items/:id      # Update
+DELETE /api/items/:id      # Delete
 ```
 
-**Get Item by ID**
-```
-GET /api/items/:id
-Headers: Authorization: Bearer <token>
-```
+## 🏗️ Project Structure
 
-**Update Item**
 ```
-PUT /api/items/:id
-Headers: Authorization: Bearer <token>
-Body: { "title": "...", "description": "...", "status": "updated" }
-```
-
-**Delete Item**
-```
-DELETE /api/items/:id
-Headers: Authorization: Bearer <token>
+src/
+├── modules/
+│   ├── auth/              # Auth module
+│   └── items/             # Items CRUD module
+├── prisma/                # Prisma service
+├── middleware/            # Middlewares
+├── config/                # Configuration
+├── app.ts                 # Express app
+└── server.ts              # Entry point
 ```
 
-## 🧪 Running K6 Performance Tests
+## 🔄 Tạo Service Mới
 
-### Install K6
+1. Clone folder này
+2. Đổi tên trong `package.json`
+3. Update `SERVICE_NAME` và `DATABASE_URL` trong `.env`
+4. Customize Prisma schema nếu cần
+5. Run migrations
+6. Deploy độc lập
 
-**macOS:**
-```bash
-brew install k6
-```
+Mỗi service có database riêng và chạy độc lập!
 
-**Linux:**
-```bash
-sudo gpg -k
-sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
-echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
-sudo apt-get update
-sudo apt-get install k6
-```
-
-**Windows:**
-```bash
-choco install k6
-```
-
-### Run Tests
-
-Đảm bảo API đang chạy, sau đó:
+## 📝 Development
 
 ```bash
-k6 run k6-test.js
+npm run dev              # Development mode
+npm run build            # Build production
+npm start                # Run production
+npm run prisma:migrate   # Run migrations
+npm run prisma:seed      # Seed database
 ```
 
-Với custom BASE_URL:
+## 🎯 Template Features
 
-```bash
-k6 run -e BASE_URL=http://192.168.1.100:3000/api k6-test.js
-```
-
-## 📁 Project Structure
-
-```
-k6-test-api/
-├── src/
-│   ├── modules/
-│   │   ├── auth/              # Authentication module
-│   │   │   ├── auth.service.ts
-│   │   │   ├── auth.controller.ts
-│   │   │   └── index.ts
-│   │   └── items/             # Items CRUD module
-│   │       ├── items.service.ts
-│   │       ├── items.controller.ts
-│   │       └── index.ts
-│   ├── prisma/                # Prisma service
-│   │   └── prisma.service.ts
-│   ├── middleware/            # Express middlewares
-│   │   ├── auth.middleware.ts
-│   │   └── error.middleware.ts
-│   ├── config/                # Configuration
-│   │   └── env.config.ts
-│   ├── app.ts                 # Express app setup
-│   └── server.ts              # Entry point
-├── prisma/
-│   ├── schema.prisma          # Database schema
-│   └── seed.ts                # Seed script
-├── k6-test.js                 # K6 performance test
-├── .env                       # Environment variables
-└── package.json
-```
-
-## 🔧 Development
-
-### Prisma Commands
-
-```bash
-# Generate Prisma Client
-npm run prisma:generate
-
-# Create migration
-npm run prisma:migrate
-
-# Seed database
-npm run prisma:seed
-
-# Open Prisma Studio
-npx prisma studio
-```
-
-### Test User Credentials
-
-- Username: `testuser`
-- Password: `testpassword`
-
-## 📊 K6 Test Scenarios
-
-Script bao gồm 4 kịch bản test:
-
-1. **Smoke Test** - 5 users trong 1 phút (kiểm tra cơ bản)
-2. **Load Test** - Tăng dần lên 50 users (tải bình thường)
-3. **Stress Test** - Tăng dần lên 300 users (test scaling)
-4. **Spike Test** - Đột biến lên 500 users (test khả năng chịu tải đột ngột)
-
-## 📝 Notes
-
-- API sử dụng JWT authentication đơn giản (không hash password)
-- Phù hợp cho testing và development, không dùng cho production
-- Cấu trúc folder theo pattern NestJS để dễ maintain và debug
+- ✅ TypeScript
+- ✅ Express.js
+- ✅ Prisma ORM
+- ✅ PostgreSQL
+- ✅ JWT Authentication
+- ✅ CRUD boilerplate
+- ✅ Error handling
+- ✅ Environment-based config
+- ✅ Ready to clone & customize

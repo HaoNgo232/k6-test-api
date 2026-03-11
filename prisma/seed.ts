@@ -1,16 +1,9 @@
-import path from 'path';
 import { PrismaClient } from '@prisma/client';
-import { PrismaLibSql } from '@prisma/adapter-libsql';
 
-const DB_PATH = `file:${path.resolve(process.cwd(), 'dev.db')}`;
-
-const adapter = new PrismaLibSql({
-  url: DB_PATH
-});
-const prisma = new PrismaClient({ adapter });
+const prisma = new PrismaClient();
 
 async function main() {
-  console.log(`🌱 Seeding database at ${DB_PATH}...`);
+  console.log('🌱 Seeding database...');
 
   // Create test user
   const user = await prisma.user.upsert({
@@ -23,6 +16,26 @@ async function main() {
   });
 
   console.log('✅ Created test user:', user);
+
+  // Create sample items
+  const items = await Promise.all([
+    prisma.item.create({
+      data: {
+        title: 'Sample Item 1',
+        description: 'This is a sample item',
+        status: 'active',
+      },
+    }),
+    prisma.item.create({
+      data: {
+        title: 'Sample Item 2',
+        description: 'Another sample item',
+        status: 'pending',
+      },
+    }),
+  ]);
+
+  console.log('✅ Created sample items:', items.length);
 }
 
 main()

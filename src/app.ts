@@ -1,9 +1,10 @@
-import express, { Application } from 'express';
+import express, { Application, Request, Response } from 'express';
 import cors from 'cors';
 import authRouter from './modules/auth';
 import itemsRouter from './modules/items';
 import { authMiddleware } from './middleware/auth.middleware';
 import { errorMiddleware } from './middleware/error.middleware';
+import config from './config/env.config';
 
 const app: Application = express();
 
@@ -13,9 +14,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Root endpoint
-app.get('/', (req, res) => {
+app.get('/', (req: Request, res: Response) => {
   res.json({
-    name: 'K6 Test API',
+    name: config.service.name,
     version: '1.0.0',
     endpoints: {
       health: '/health',
@@ -26,8 +27,12 @@ app.get('/', (req, res) => {
 });
 
 // Health check
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+app.get('/health', (req: Request, res: Response) => {
+  res.status(200).json({ 
+    status: 'ok', 
+    service: config.service.name,
+    timestamp: new Date().toISOString() 
+  });
 });
 
 // Routes
