@@ -4,6 +4,7 @@
   "description": "Express API for K6 performance testing",
   "main": "dist/server.js",
   "scripts": {
+    "postinstall": "prisma generate",
     "dev": "nodemon --exec tsx src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
